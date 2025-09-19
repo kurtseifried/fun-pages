@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Pages - HTML5 Utilities</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .utilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .utility-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .utility-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        .utility-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        .utility-card p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fun Pages</h1>
+        <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px;">
+            A collection of HTML5 utilities for image processing and fun experiments
+        </p>
+
+        <div class="utilities">
+            <div class="utility-card">
+                <h3>🔍 Image Mosaic</h3>
+                <p>Upload an image and create a compound eye effect that fills your entire screen, adapting to any image aspect ratio.</p>
+                <a href="mosaic.html" class="btn">Try Image Mosaic</a>
+            </div>
+
+            <div class="utility-card">
+                <h3>🔄 Image Converter</h3>
+                <p>Convert images between different formats (JPEG, PNG, WebP) with quality controls.</p>
+                <a href="#" class="btn" style="opacity: 0.6;">Coming Soon</a>
+            </div>
+
+            <div class="utility-card">
+                <h3>🎨 Color Palette</h3>
+                <p>Extract dominant colors from uploaded images to create beautiful color palettes.</p>
+                <a href="#" class="btn" style="opacity: 0.6;">Coming Soon</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with HTML5 Canvas API and modern web technologies</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Mosaic - Fun Pages</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            transition: background 0.3s ease;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .controls {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .slider-group {
+            margin: 20px 0;
+        }
+        .slider-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .slider-value {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 5px 15px;
+            border-radius: 15px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: white;
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+        #canvas {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #canvas:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fullscreen-canvas {
+            border-radius: 0 !important;
+            cursor: pointer;
+        }
+        .close-fullscreen {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 15px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #333;
+        }
+        .hidden {
+            display: none;
+        }
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">← Back to Home</a>
+            <h1>🔍 Image Mosaic</h1>
+            <p>Create a compound eye effect that fills your screen with repeating images</p>
+        </div>
+
+        <div class="controls">
+            <div class="upload-area" id="uploadArea">
+                <h3>📁 Upload an Image</h3>
+                <p>Click here or drag and drop an image file</p>
+                <p style="opacity: 0.7; font-size: 0.9em;">Supports: JPG, PNG, GIF, WebP</p>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div id="previewContainer" class="hidden">
+                <img id="preview" class="preview-image" alt="Preview">
+            </div>
+
+            <div class="slider-group">
+                <label for="tilesAcross">Tiles Across:</label>
+                <input type="range" id="tilesAcross" min="2" max="20" value="6">
+                <span class="slider-value" id="tilesAcrossValue">6</span>
+            </div>
+
+            <div class="slider-group">
+                <label for="fillMode">Display Mode:</label>
+                <select id="fillMode" style="width: 100%; padding: 10px; border-radius: 10px; border: none; background: rgba(255,255,255,0.9); color: #333; font-size: 16px;">
+                    <option value="fullscreen">Full Screen (viewport)</option>
+                    <option value="custom">Custom Size</option>
+                </select>
+            </div>
+
+            <div class="slider-group" id="tileSizeGroup">
+                <label for="tileSize">Tile Size (pixels):</label>
+                <input type="range" id="tileSize" min="50" max="300" value="150">
+                <span class="slider-value" id="tileSizeValue">150px</span>
+            </div>
+
+            <div class="slider-group">
+                <label for="spacing">Spacing between tiles:</label>
+                <input type="range" id="spacing" min="0" max="20" value="2">
+                <span class="slider-value" id="spacingValue">2px</span>
+            </div>
+
+            <button class="btn" id="generateBtn" disabled>Generate Mosaic</button>
+            <button class="btn" id="downloadBtn" disabled>Download Result</button>
+        </div>
+
+        <div class="result" id="result" style="display: none;">
+            <h3>Your Image Mosaic</h3>
+            <p style="opacity: 0.8; margin-bottom: 20px;">Click the image below to view fullscreen</p>
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const preview = document.getElementById('preview');
+        const tilesAcrossSlider = document.getElementById('tilesAcross');
+        const tileSizeSlider = document.getElementById('tileSize');
+        const spacingSlider = document.getElementById('spacing');
+        const tilesAcrossValue = document.getElementById('tilesAcrossValue');
+        const tileSizeValue = document.getElementById('tileSizeValue');
+        const spacingValue = document.getElementById('spacingValue');
+        const fillModeSelect = document.getElementById('fillMode');
+        const tileSizeGroup = document.getElementById('tileSizeGroup');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const result = document.getElementById('result');
+
+        let currentImage = null;
+
+        // Upload area events
+        uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageUpload(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageUpload(e.target.files[0]);
+            }
+        });
+
+        // Slider events
+        tilesAcrossSlider.addEventListener('input', (e) => {
+            tilesAcrossValue.textContent = e.target.value;
+        });
+
+        tileSizeSlider.addEventListener('input', (e) => {
+            tileSizeValue.textContent = `${e.target.value}px`;
+        });
+
+        spacingSlider.addEventListener('input', (e) => {
+            spacingValue.textContent = `${e.target.value}px`;
+        });
+
+        fillModeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'fullscreen') {
+                tileSizeGroup.style.display = 'none';
+            } else {
+                tileSizeGroup.style.display = 'block';
+            }
+        });
+
+        // Initialize with fullscreen mode
+        tileSizeGroup.style.display = 'none';
+
+        generateBtn.addEventListener('click', generateMosaic);
+        downloadBtn.addEventListener('click', downloadImage);
+
+        function showFullscreen() {
+            // Create fullscreen container
+            const fullscreenContainer = document.createElement('div');
+            fullscreenContainer.className = 'fullscreen-mode';
+            fullscreenContainer.id = 'fullscreenContainer';
+
+            // Add canvas to fullscreen container
+            canvas.classList.add('fullscreen-canvas');
+            fullscreenContainer.appendChild(canvas);
+
+            // Add close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕ Close Fullscreen (or click image)';
+            closeBtn.className = 'close-fullscreen';
+            closeBtn.onclick = () => {
+                canvas.classList.remove('fullscreen-canvas');
+                result.appendChild(canvas);
+                fullscreenContainer.remove();
+                document.body.style.overflow = 'auto';
+                result.style.display = 'block';
+
+                // Restore canvas click handler
+                canvas.onclick = () => {
+                    if (!canvas.classList.contains('fullscreen-canvas')) {
+                        showFullscreen();
+                    }
+                };
+            };
+            fullscreenContainer.appendChild(closeBtn);
+
+            // Click canvas to close fullscreen
+            canvas.onclick = () => closeBtn.click();
+
+            // Add to body and hide scroll
+            document.body.appendChild(fullscreenContainer);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function handleImageUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    preview.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                    generateBtn.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function generateMosaic() {
+            if (!currentImage) return;
+
+            const tilesAcross = parseInt(tilesAcrossSlider.value);
+            const spacing = parseInt(spacingSlider.value);
+            const fillMode = fillModeSelect.value;
+
+            let canvasWidth, canvasHeight, tileWidth, tileHeight, tilesDown;
+
+            if (fillMode === 'fullscreen') {
+                // Use viewport dimensions
+                canvasWidth = window.innerWidth;
+                canvasHeight = window.innerHeight;
+
+                // Calculate tile width to fit tiles across the screen
+                const availableWidth = canvasWidth - (spacing * (tilesAcross - 1));
+                tileWidth = Math.floor(availableWidth / tilesAcross);
+
+                // Calculate tile height based on image aspect ratio
+                const imageAspect = currentImage.width / currentImage.height;
+                tileHeight = Math.floor(tileWidth / imageAspect);
+
+                // Calculate how many tiles fit vertically
+                tilesDown = Math.floor((canvasHeight + spacing) / (tileHeight + spacing));
+
+                // Recalculate canvas height to fit exact number of tiles
+                canvasHeight = (tileHeight * tilesDown) + (spacing * (tilesDown - 1));
+            } else {
+                const baseTileSize = parseInt(tileSizeSlider.value);
+                const imageAspect = currentImage.width / currentImage.height;
+
+                tileWidth = baseTileSize;
+                tileHeight = Math.floor(baseTileSize / imageAspect);
+
+                // For custom mode, create a reasonable grid
+                tilesDown = Math.ceil(tilesAcross * (1/imageAspect));
+
+                canvasWidth = (tileWidth * tilesAcross) + (spacing * (tilesAcross - 1));
+                canvasHeight = (tileHeight * tilesDown) + (spacing * (tilesDown - 1));
+            }
+
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            // Set canvas style dimensions for fullscreen
+            if (fillMode === 'fullscreen') {
+                canvas.style.width = canvasWidth + 'px';
+                canvas.style.height = canvasHeight + 'px';
+            } else {
+                canvas.style.width = '';
+                canvas.style.height = '';
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Center the grid if fullscreen mode
+            let startX = 0, startY = 0;
+            if (fillMode === 'fullscreen') {
+                const gridWidth = (tileWidth * tilesAcross) + (spacing * (tilesAcross - 1));
+                const gridHeight = (tileHeight * tilesDown) + (spacing * (tilesDown - 1));
+                startX = (canvasWidth - gridWidth) / 2;
+                startY = (canvasHeight - gridHeight) / 2;
+            }
+
+            for (let row = 0; row < tilesDown; row++) {
+                for (let col = 0; col < tilesAcross; col++) {
+                    const x = startX + col * (tileWidth + spacing);
+                    const y = startY + row * (tileHeight + spacing);
+
+                    // Draw the image to fit the tile dimensions
+                    ctx.drawImage(
+                        currentImage,
+                        x,
+                        y,
+                        tileWidth,
+                        tileHeight
+                    );
+                }
+            }
+
+            // Handle fullscreen display
+            if (fillMode === 'fullscreen') {
+                showFullscreen();
+            } else {
+                // Normal mode - show in result area
+                canvas.classList.remove('fullscreen-canvas');
+                result.style.display = 'block';
+                result.scrollIntoView({ behavior: 'smooth' });
+
+                // Make canvas clickable to go fullscreen
+                canvas.onclick = () => {
+                    if (!canvas.classList.contains('fullscreen-canvas')) {
+                        showFullscreen();
+                    }
+                };
+            }
+
+            downloadBtn.disabled = false;
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'image-mosaic.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
