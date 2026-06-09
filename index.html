@@ -3,110 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Pages - HTML5 Utilities</title>
+    <title>Photo Fun!</title>
     <style>
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
+            max-width: 700px;
             margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
             min-height: 100vh;
-            color: white;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
         }
         h1 {
             text-align: center;
-            margin-bottom: 40px;
-            font-size: 2.5em;
+            font-size: 2.4em;
+            margin: 8px 0 18px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
-        .utilities {
+        /* The photo stage: doubles as the "tap to add a photo" target */
+        #stage {
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px dashed rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            min-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        #stage.dragover {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        #stage.has-photo {
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.3);
+            cursor: zoom-in;
+        }
+        #emptyPrompt { text-align: center; padding: 30px; }
+        #emptyPrompt .big { font-size: 3.2em; line-height: 1; }
+        #emptyPrompt p { font-size: 1.25em; font-weight: 600; margin: 14px 0 0; }
+        #photo { display: none; width: 100%; max-height: 60vh; object-fit: contain; }
+        .hint { text-align: center; opacity: 0.85; margin: 0 0 16px; font-size: 0.98em; min-height: 1.2em; }
+
+        .buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .utility-card {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .utility-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-        }
-        .utility-card h3 {
-            margin-bottom: 15px;
-            font-size: 1.4em;
-        }
-        .utility-card p {
-            margin-bottom: 20px;
-            opacity: 0.9;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
         .btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            text-decoration: none;
-            border-radius: 25px;
-            transition: all 0.3s ease;
-            font-weight: 600;
+            background: rgba(255, 255, 255, 0.92);
+            color: #1c1c1e;
+            border: none;
+            border-radius: 18px;
+            padding: 16px 6px;
+            font-size: 1.0em;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            transition: transform 0.12s ease, opacity 0.2s ease;
         }
-        .btn:hover {
-            background: white;
-            transform: scale(1.05);
+        .btn:hover { transform: translateY(-3px); }
+        .btn:active { transform: translateY(0) scale(0.97); }
+        .btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+        .btn svg { width: 34px; height: 34px; display: block; margin: 0 auto 8px; color: #1c1c1e; }
+
+        .actions { display: flex; gap: 12px; margin-top: 18px; }
+        .action {
+            flex: 1;
+            border: none;
+            border-radius: 18px;
+            padding: 16px 10px;
+            font-size: 1.12em;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity 0.2s ease, transform 0.12s ease;
         }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-            opacity: 0.8;
+        .action:active { transform: scale(0.98); }
+        .action:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+        .action svg { width: 24px; height: 24px; }
+        .save { background: #34d399; color: #053; }
+        .reset { background: rgba(255, 255, 255, 0.25); color: #fff; }
+
+        /* Fullscreen view for save / tap-to-zoom (parent long-press to save) */
+        #fullscreen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
         }
+        #fullscreen img { max-width: 100%; max-height: 80vh; border-radius: 12px; }
+        #fullscreen p { margin-top: 18px; opacity: 0.85; font-size: 1.05em; text-align: center; }
+        #fullscreen .close-hint { margin-top: 6px; opacity: 0.6; font-size: 0.9em; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Fun Pages</h1>
-        <p style="text-align: center; font-size: 1.2em; margin-bottom: 40px;">
-            A collection of HTML5 utilities for image processing and fun experiments
-        </p>
+    <h1>🐙 Photo Fun!</h1>
 
-        <div class="utilities">
-            <div class="utility-card">
-                <h3>🔍 Image Mosaic</h3>
-                <p>Upload an image and create a compound eye effect that fills your entire screen, adapting to any image aspect ratio.</p>
-                <a href="mosaic.html" class="btn">Try Image Mosaic</a>
-            </div>
-
-            <div class="utility-card">
-                <h3>🎨 Color Inverter</h3>
-                <p>Invert the colors of your images for dramatic negative effects and artistic transformations.</p>
-                <a href="invert.html" class="btn">Try Color Inverter</a>
-            </div>
-
-            <div class="utility-card">
-                <h3>🎨 Color Palette</h3>
-                <p>Extract dominant colors from uploaded images to create beautiful color palettes.</p>
-                <a href="#" class="btn" style="opacity: 0.6;">Coming Soon</a>
-            </div>
+    <div id="stage">
+        <div id="emptyPrompt">
+            <div class="big">📷</div>
+            <p>Tap to add a photo</p>
         </div>
-
-        <div class="footer">
-            <p>Built with HTML5 Canvas API and modern web technologies</p>
-        </div>
+        <img id="photo" alt="Your picture">
     </div>
+    <p class="hint" id="hint">Pick a photo to get started!</p>
+
+    <div class="buttons">
+        <!-- Top row: shape effects -->
+        <button class="btn" data-effect="tiles" disabled title="Make Tiles">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <path d="M9 3.5v17M15 3.5v17M3.5 9h17M3.5 15h17"/>
+            </svg>Make Tiles
+        </button>
+        <button class="btn" data-effect="mirror" disabled title="Mirror">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18" stroke-dasharray="2.5 2.5"/>
+                <path d="M9.5 6.5 4.5 12l5 5.5Z" fill="currentColor" stroke="none"/>
+                <path d="M14.5 6.5 19.5 12l-5 5.5Z"/>
+            </svg>Mirror
+        </button>
+        <button class="btn" data-effect="rotate" disabled title="Rotate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 11a8 8 0 1 0-2.3 6.4"/>
+                <path d="M20 4v5h-5"/>
+            </svg>Rotate
+        </button>
+        <!-- Bottom row: color effects + undo -->
+        <button class="btn" data-effect="invert" disabled title="Flip Colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none"/>
+            </svg>Flip Colors
+        </button>
+        <button class="btn" data-effect="gray" disabled title="Gray">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/>
+                <path d="M12 3v18"/>
+            </svg>Gray
+        </button>
+        <button class="btn" id="undoBtn" disabled title="Undo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 7H15.5a4.5 4.5 0 0 1 0 9H7"/>
+                <path d="M11.5 3.5 8 7l3.5 3.5"/>
+            </svg>Undo
+        </button>
+    </div>
+
+    <div class="actions">
+        <button class="action save" id="saveBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/>
+            </svg>Save my picture
+        </button>
+        <button class="action reset" id="resetBtn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 3v5h5"/>
+            </svg>Start over
+        </button>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+
+    <div id="fullscreen">
+        <img id="fullscreenImg" alt="Your saved picture">
+        <p>📸 Press and hold the picture to add it to your photos</p>
+        <p class="close-hint">(tap anywhere to close)</p>
+    </div>
+
+    <script>
+        // Largest dimension we keep an image at — keeps effects snappy on tablets.
+        const MAX_SIZE = 1200;
+        // How many copies across/down each "Make Tiles" tap creates of the current picture.
+        const TILES_PER_TAP = 3;
+
+        const stage = document.getElementById('stage');
+        const emptyPrompt = document.getElementById('emptyPrompt');
+        const photo = document.getElementById('photo');
+        const hint = document.getElementById('hint');
+        const fileInput = document.getElementById('fileInput');
+        const undoBtn = document.getElementById('undoBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fullscreen = document.getElementById('fullscreen');
+        const fullscreenImg = document.getElementById('fullscreenImg');
+        const effectButtons = document.querySelectorAll('.btn[data-effect]');
+
+        // history is a stack of canvases. The top is what's shown. Undo pops; we
+        // never pop the first entry, so there's always at least the original photo.
+        let history = [];
+        const current = () => history[history.length - 1];
+
+        // ---- Loading a photo -------------------------------------------------
+        stage.addEventListener('click', () => {
+            if (history.length === 0) fileInput.click();   // empty stage = upload target
+            else showFullscreen();                          // photo loaded = zoom for long-press save
+        });
+        stage.addEventListener('dragover', (e) => { e.preventDefault(); stage.classList.add('dragover'); });
+        stage.addEventListener('dragleave', () => stage.classList.remove('dragover'));
+        stage.addEventListener('drop', (e) => {
+            e.preventDefault();
+            stage.classList.remove('dragover');
+            if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) loadFile(e.target.files[0]);
+        });
+
+        function loadFile(file) {
+            if (!file.type.startsWith('image/')) {
+                hint.textContent = 'Oops! Please pick an image (a photo or picture).';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Draw onto a canvas, scaling down if the photo is huge.
+                    let { width, height } = img;
+                    const scale = Math.min(1, MAX_SIZE / Math.max(width, height));
+                    width = Math.round(width * scale);
+                    height = Math.round(height * scale);
+                    const canvas = makeCanvas(width, height);
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    history = [canvas];
+                    render();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ---- Effects: each takes the current canvas, returns a new one -------
+        const effects = {
+            invert(src) {
+                const out = cloneCanvas(src);
+                const ctx = out.getContext('2d');
+                const data = ctx.getImageData(0, 0, out.width, out.height);
+                const p = data.data;
+                for (let i = 0; i < p.length; i += 4) {
+                    p[i] = 255 - p[i];
+                    p[i + 1] = 255 - p[i + 1];
+                    p[i + 2] = 255 - p[i + 2];
+                }
+                ctx.putImageData(data, 0, 0);
+                return out;
+            },
+            gray(src) {
+                const out = cloneCanvas(src);
+                const ctx = out.getContext('2d');
+                const data = ctx.getImageData(0, 0, out.width, out.height);
+                const p = data.data;
+                for (let i = 0; i < p.length; i += 4) {
+                    // Rec. 601 luma — matches how we perceive brightness.
+                    const lum = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2];
+                    p[i] = p[i + 1] = p[i + 2] = lum;
+                }
+                ctx.putImageData(data, 0, 0);
+                return out;
+            },
+            mirror(src) {
+                const out = makeCanvas(src.width, src.height);
+                const ctx = out.getContext('2d');
+                ctx.translate(out.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(src, 0, 0);
+                return out;
+            },
+            rotate(src) {
+                // 90° clockwise — swap width/height and rotate about the center.
+                const out = makeCanvas(src.height, src.width);
+                const ctx = out.getContext('2d');
+                ctx.translate(out.width / 2, out.height / 2);
+                ctx.rotate(Math.PI / 2);
+                ctx.drawImage(src, -src.width / 2, -src.height / 2);
+                return out;
+            },
+            tiles(src) {
+                // Shrink the current picture into an N×N grid of itself. Tapping
+                // again tiles the already-tiled image, so density compounds.
+                const out = makeCanvas(src.width, src.height);
+                const ctx = out.getContext('2d');
+                const tw = out.width / TILES_PER_TAP;
+                const th = out.height / TILES_PER_TAP;
+                for (let row = 0; row < TILES_PER_TAP; row++) {
+                    for (let col = 0; col < TILES_PER_TAP; col++) {
+                        ctx.drawImage(src, col * tw, row * th, tw, th);
+                    }
+                }
+                return out;
+            }
+        };
+
+        effectButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (history.length === 0) return;
+                const fn = effects[btn.dataset.effect];
+                history.push(fn(current()));
+                render();
+            });
+        });
+
+        undoBtn.addEventListener('click', () => {
+            if (history.length > 1) { history.pop(); render(); }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            history = [];
+            fileInput.value = '';   // let the same file be re-picked
+            render();
+        });
+
+        saveBtn.addEventListener('click', () => {
+            if (history.length === 0) return;
+            const dataUrl = current().toDataURL('image/png');
+            // 1) Trigger a normal download (desktop + Android).
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'photo-fun.png';
+            a.click();
+            // 2) Also show it big so a parent can long-press → Add to Photos (iPad).
+            showFullscreen();
+        });
+
+        // ---- Fullscreen view -------------------------------------------------
+        function showFullscreen() {
+            if (history.length === 0) return;
+            fullscreenImg.src = current().toDataURL('image/png');
+            fullscreen.style.display = 'flex';
+        }
+        fullscreen.addEventListener('click', (e) => {
+            if (e.target !== fullscreenImg) fullscreen.style.display = 'none';
+        });
+
+        // ---- Rendering / UI state -------------------------------------------
+        function render() {
+            const hasPhoto = history.length > 0;
+            if (hasPhoto) {
+                photo.src = current().toDataURL('image/png');
+                photo.style.display = 'block';
+                emptyPrompt.style.display = 'none';
+                stage.classList.add('has-photo');
+                hint.textContent = '👆 Tap a button to change your photo. Tap again for more!';
+            } else {
+                photo.style.display = 'none';
+                photo.removeAttribute('src');
+                emptyPrompt.style.display = 'block';
+                stage.classList.remove('has-photo');
+                hint.textContent = 'Pick a photo to get started!';
+            }
+            effectButtons.forEach((b) => { b.disabled = !hasPhoto; });
+            saveBtn.disabled = !hasPhoto;
+            resetBtn.disabled = !hasPhoto;
+            undoBtn.disabled = history.length <= 1;   // nothing to undo back to
+        }
+
+        // ---- Small canvas helpers -------------------------------------------
+        function makeCanvas(w, h) {
+            const c = document.createElement('canvas');
+            c.width = w;
+            c.height = h;
+            return c;
+        }
+        function cloneCanvas(src) {
+            const c = makeCanvas(src.width, src.height);
+            c.getContext('2d').drawImage(src, 0, 0);
+            return c;
+        }
+
+        render();
+    </script>
 </body>
 </html>
